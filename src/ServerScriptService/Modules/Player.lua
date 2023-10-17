@@ -1,0 +1,119 @@
+-- Services =========================================================
+local DSS = game:GetService("DataStoreService")
+
+-- Modules ==========================================================
+local Inventory = require(game.ServerScriptService.Modules.Inventory)
+
+-- Variables ========================================================
+local PLAYER_DATA = DSS:GetDataStore("PLAYER_DATA")
+
+-- ==================================================================
+
+local Player = {}
+
+Player.__index = Player
+
+function Player.new(player_instance)
+    local self = {}
+    setmetatable(self, Player)
+    
+    -- Set player properties
+    self.Player = player_instance
+    self._level = 1
+    self._xp = 0
+    self._health = 100
+    self._stamina = 100
+
+    -- Create inventory for player.
+    self.Inventory = Inventory.new()
+
+    -- Set skills
+    self._Skills = {
+        ['Strength'] = 10,
+        ['Intelligence'] = 10,
+        ['Stealth'] = 10
+    }
+
+    -- Equipped items 
+    self._EquippedItems = {
+        ['head'] = "nil",
+        ['chest'] = "nil",
+        ['legs'] = "nil",
+        ['feet'] = "nil",
+        ['hands'] = "nil",
+        ['left_hand_item'] = "nil",
+        ['right_hand_item'] = "nil"
+    }
+
+
+    return self
+end
+
+function Player:getPlayer()
+    return self.Player
+end
+
+function Player:loadSaveData()
+    -- Get the player's key.
+    local key = self.Player.Name .. ":" .. self.Player.UserId
+
+    -- Request the player's data from the datastore.
+    local data
+    local success, err = pcall(function()
+        data = PLAYER_DATA:GetAsync(key)
+    end)
+
+    if success then
+        -- Set all the player's attributes accordingly
+        self._level = data.level
+        self._xp = data.xp
+        self._health = data.health
+        self._stamina = data.stamina
+        self._Skills = data.Skills
+        self._EquippedItems = data.EquippedItems
+        self.Inventory:setCoins(data.Inventory.coins)
+        self.Inventory:setGems(data.Inventory.gems)
+        self.Inventory:setItemCount(data.Inventory.items.length)
+        self.Inventory:setTotalWeight(data.Inventory.total_weight)
+        self.Inventory._items = data.Inventory.items
+    else
+        error(err)
+    end
+end
+
+function Player:saveData()
+    -- Get the player's key.
+    local key = "player_" .. self.Player.UserId
+
+    local data = {
+        level = self._level,
+        xp = self._xp,
+        health = self._health,
+        stamina = self._stamina,
+        Skills = self._Skills,
+        EquippedItems = self._EquippedItems,
+        Inventory = {
+            coins = self.Inventory._coins,
+            gems = self.Inventory._gems,
+            total_weight = self.Inventory._totalWeight,
+            items = self.Inventory._items
+        }
+    }
+
+    -- Attempt to save data to datastore.
+    local success, err = pcall(function()
+        PLAYER_DATA:SetAsync(key, data)
+    end)
+
+    if success then
+        return success
+    else
+        err(err)
+    end
+end
+
+function Player:printTest()
+    print("This function is working!")
+end
+
+return Player
