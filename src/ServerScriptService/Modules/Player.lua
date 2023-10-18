@@ -13,7 +13,7 @@ local Player = {}
 
 Player.__index = Player
 
-function Player.new(player_instance)
+function Player.new(player_instance: Player)
     local self = {}
     setmetatable(self, Player)
     
@@ -22,17 +22,9 @@ function Player.new(player_instance)
     self._level = 1
     self._xp = 0
     self._health = 100
-    self._stamina = 100
 
     -- Create inventory for player.
     self.Inventory = Inventory.new()
-
-    -- Set skills
-    self._Skills = {
-        ['Strength'] = 10,
-        ['Intelligence'] = 10,
-        ['Stealth'] = 10
-    }
 
     -- Equipped items 
     self._EquippedItems = {
@@ -44,7 +36,6 @@ function Player.new(player_instance)
         ['left_hand_item'] = "nil",
         ['right_hand_item'] = "nil"
     }
-
 
     return self
 end
@@ -67,9 +58,6 @@ function Player:loadSaveData()
         -- Set all the player's attributes accordingly
         self._level = data.level
         self._xp = data.xp
-        self._health = data.health
-        self._stamina = data.stamina
-        self._Skills = data.Skills
         self._EquippedItems = data.EquippedItems
         self.Inventory:setCoins(data.Inventory.coins)
         self.Inventory:setGems(data.Inventory.gems)
@@ -78,6 +66,7 @@ function Player:loadSaveData()
         self.Inventory._items = data.Inventory.items
     else
         error(err)
+        self:Kick("ERROR CODE: 3\nYour datastore has failed to load.")
     end
 end
 
@@ -88,14 +77,10 @@ function Player:saveData()
     local data = {
         level = self._level,
         xp = self._xp,
-        health = self._health,
-        stamina = self._stamina,
-        Skills = self._Skills,
         EquippedItems = self._EquippedItems,
         Inventory = {
             coins = self.Inventory._coins,
             gems = self.Inventory._gems,
-            total_weight = self.Inventory._totalWeight,
             items = self.Inventory._items
         }
     }
@@ -110,6 +95,13 @@ function Player:saveData()
     else
         err(err)
     end
+end
+
+function Player:Kick(reason: string)
+    self.Player:Kick(reason)
+end
+
+function Player:Leaving()
 end
 
 function Player:printTest()

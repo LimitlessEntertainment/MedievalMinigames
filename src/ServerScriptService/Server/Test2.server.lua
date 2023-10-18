@@ -1,0 +1,13 @@
+local PlayerManager = require(game.ServerScriptService.Modules.PlayerManager)
+local Players = game:GetService("Players")
+
+task.wait(10)
+local player = PlayerManager.getPlayerByName("MrJesseh")
+player.Inventory:addCoins(100)
+print(player.Inventory:getCoins())
+print(player)
+task.wait(20)
+player.Inventory:addItem("lol", 2)
+print(player.Inventory)
+player.Inventory:addItem("lol", 4)
+print(player.Inventory:getInventory())

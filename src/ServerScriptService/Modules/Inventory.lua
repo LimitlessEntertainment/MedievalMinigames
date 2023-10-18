@@ -5,7 +5,7 @@
 
 -- Modules =========================================================
 local Items = require(game.ReplicatedStorage.Modules.Items)
-local EventHandler = require(game.ReplicatedStorage.Modules.EventHandler)
+--local EventHandler = require(game.ReplicatedStorage.Modules.EventHandler)
 
 -- Variables =======================================================
 -- N/A
@@ -54,32 +54,32 @@ function Inventory:getGems()
 end
 
 -- Money setters
-function Inventory:setCoins(amount)
+function Inventory:setCoins(amount: number)
     self._coins = amount
 end
 
-function Inventory:addCoins(amount)
+function Inventory:addCoins(amount: number)
     self._coins += amount
 end
 
-function Inventory:setGems(amount)
+function Inventory:setGems(amount: number)
     self._gems = amount
 end
 
-function Inventory:addGems(amount)
+function Inventory:addGems(amount: number)
     self._gems += amount
 end
 
-function Inventory:removeGems(amount)
+function Inventory:removeGems(amount: number)
     self._gems -= amount
 end
 
-function Inventory:removeCoins(amount)
+function Inventory:removeCoins(amount: number)
     self._coins -= amount
 end
 
 -- Item handling
-function Inventory:hasItem(item_id)
+function Inventory:hasItem(item_id: string)
     if self._items[item_id] ~= nil then 
         return true 
     else
@@ -87,7 +87,7 @@ function Inventory:hasItem(item_id)
     end
 end
 
-function Inventory:getItem(item_id)
+function Inventory:getItem(item_id: string)
     if self:hasItem(item_id) then
         return self._items[item_id]
     else
@@ -100,7 +100,7 @@ function Inventory:getAllItems()
     return self._items
 end
 
-function Inventory:addItem(item_id, amount)
+function Inventory:addItem(item_id: string, amount: number)
     if Items[item_id] ~= nil then
         if self:hasItem(item_id) then
             self._items[item_id].amount += amount
@@ -108,13 +108,13 @@ function Inventory:addItem(item_id, amount)
             self._items[item_id] = {amount = amount}
         end
         -- Fire event to tell the client that the inventory has been updated.
-        EventHandler.ItemAdded = {[item_id] = {amount = self._items[item_id].amount}}
+        --EventHandler.ItemAdded = {[item_id] = {amount = self._items[item_id].amount}}
     else
         return error("This item id does not exist.")
     end
 end
 
-function Inventory:removeItem(item_id, amount)
+function Inventory:removeItem(item_id: string, amount: number)
     if Items[item_id] ~= nil then                              
         if amount > self._items[item_id].amount then
             return error("Attempt to remove " .. amount .. " " .. item_id .. " from inventory unsuccessful: Amount to remove exceeds current amount.")
