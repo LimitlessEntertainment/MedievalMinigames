@@ -29,13 +29,13 @@ function Player.new(player_instance: Player)
 
     -- Equipped items 
     self._EquippedItems = {
-        ['head'] = "nil",
-        ['chest'] = "nil",
-        ['legs'] = "nil",
-        ['feet'] = "nil",
-        ['hands'] = "nil",
-        ['left_hand_item'] = "nil",
-        ['right_hand_item'] = "nil"
+        ['head'] = nil,
+        ['chest'] = nil,
+        ['legs'] = nil,
+        ['feet'] = nil,
+        ['hands'] = nil,
+        ['left_hand_item'] = nil,
+        ['right_hand_item'] = nil
     }
 
     return self
@@ -109,6 +109,37 @@ end
 
 function Player:printTest()
     print("This function is working!")
+end
+
+function Player:GetCharacter()
+    return self.Player.Character
+end
+
+function Player:AddAccessory(accessory: Accessory)
+    local character = self:GetCharacter()
+    return character.Humanoid:AddAccessory(accessory)
+end
+
+function Player:RemoveAccessory(name: string)
+    local character = self:GetCharacter()
+    local accessories = character.Humanoid:GetAccessories()
+    for _, v in pairs(accessories) do
+        if v.Name == name then
+            v:Destroy()
+        end
+    end
+end
+
+function Player:HasAccessory(name: string)
+    local character = self:GetCharacter()
+    local accessories = character.Humanoid:GetAccessories()
+    for _, v in pairs(accessories) do
+        if v.Name == name then
+            return true
+        end
+    end
+
+    return false
 end
 
 return Player
