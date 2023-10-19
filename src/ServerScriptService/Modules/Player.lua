@@ -1,5 +1,6 @@
 -- Services =========================================================
 local DSS = game:GetService("DataStoreService")
+local Players = game:GetService("Players")
 
 -- Modules ==========================================================
 local Inventory = require(game.ServerScriptService.Modules.Inventory)
@@ -40,6 +41,8 @@ function Player.new(player_instance: Player)
     return self
 end
 
+
+
 function Player:getPlayer()
     return self.Player
 end
@@ -66,7 +69,7 @@ function Player:loadSaveData()
         self.Inventory._items = data.Inventory.items
     else
         error(err)
-        self:Kick("ERROR CODE: 3\nYour datastore has failed to load.")
+        self:Kick("ERROR CODE: DS1\nYour datastore has failed to load.")
     end
 end
 
