@@ -142,4 +142,8 @@ function Player:HasAccessory(name: string)
     return false
 end
 
+function Player:Respawn()
+    
+end
+
 return Player
