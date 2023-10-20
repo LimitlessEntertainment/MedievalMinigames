@@ -6,9 +6,13 @@ local ServerStorage = game:GetService("ServerStorage")
 -- Modules ==========================================================
 local PlayerManager = require(game.ServerScriptService.Modules.PlayerManager)
 
+-- Constants ========================================================
+local TIME_CONSTANT = 30
+
 -- Variables ========================================================
 local RedHoldChest = ServerStorage.GameAssets.CaptureTheTreasure:WaitForChild("RedHoldChest")
 local BlueHoldChest = ServerStorage.GameAssets.CaptureTheTreasure:WaitForChild("BlueHoldChest")
+
 
 -- In-Map Chests
 local RedChest = game.Workspace.RedChest
@@ -24,7 +28,7 @@ local RedDeposit = game.Workspace.RedDeposit
 local db = false
 local redScore = 0
 local blueScore = 0
-local time = 120
+local time = TIME_CONSTANT
 
 -- Listeners
 local Listeners = {}
@@ -72,6 +76,13 @@ function CaptureTheTreasure.run()
     destroyTeams()
     disconnect()
     resetPlayers()
+    resetVars()
+end
+
+function resetVars()
+    redScore = 0
+    blueScore = 0
+    time = TIME_CONSTANT
 end
 
 function createTeams()

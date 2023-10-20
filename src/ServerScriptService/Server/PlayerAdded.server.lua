@@ -5,8 +5,5 @@ local CaptureTheTreasure = require(game.ServerScriptService.Modules.Games.Captur
 Players.PlayerAdded:Connect(function(player)
     -- Creates a new Player instance.
     local plr = PlayerManager.addPlayer(player)
-
-    task.wait(5)
-    CaptureTheTreasure.run()
 end)
 
