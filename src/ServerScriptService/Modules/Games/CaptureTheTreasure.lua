@@ -47,23 +47,31 @@ function CaptureTheTreasure.run()
     while true do
 
         -- ROUND TIMER
-        time -= 1
         print("TIME LEFT: ", time)
+        time -= 1
         task.wait(1)
 
         -- Ending conditions
         if blueScore >= 2 then
-            
+            print("BLUE WINS!!")
             break
         end
 
         if redScore >= 2 then
-            
+            print("RED WINS!!")
             break
         end
 
         if time <= 0 then
-            print("RAN OUT OF TIME!!!")
+            if redScore == blueScore then
+                print("TIE GAME!!")
+            elseif blueScore == redScore then
+                print("BLUE WINS!!")
+            elseif redScore == blueScore then
+                print("RED WINS!!")
+            else
+                print("TIME OUT!")
+            end
             break
         end
     end
@@ -75,14 +83,18 @@ function CaptureTheTreasure.run()
     assignLobby()
     destroyTeams()
     disconnect()
+    resetGame()
     resetPlayers()
-    resetVars()
 end
 
-function resetVars()
+function resetGame()
     redScore = 0
     blueScore = 0
     time = TIME_CONSTANT
+    BluePrompt.Enabled = false
+    RedPrompt.Enabled = false
+    BlueChest.Transparency = 0
+    RedChest.Transparency = 0
 end
 
 function createTeams()
@@ -155,6 +167,15 @@ function initListeners()
         RedChest.Transparency = 0.9
         RedPrompt.Enabled = false
         player:AddAccessory(RedHoldChest:Clone())
+
+        -- Add a listener to the player holding the chest to check if they die with it.
+        local redEvent
+        redEvent = player:GetCharacter().Humanoid.Died:Connect(function()
+            print("ENTERED HERE LOL")
+            RedPrompt.Enabled = true
+            RedChest.Transparency = 0
+            redEvent:Disconnect()
+        end)
     end),
 
     BluePrompt.Triggered:Connect(function(plr)
@@ -167,6 +188,14 @@ function initListeners()
         BlueChest.Transparency = 0.9
         BluePrompt.Enabled = false
         player:AddAccessory(BlueHoldChest:Clone())
+
+        -- Add a listener to the player holding the chest to check if they die with it.
+        local blueEvent
+        blueEvent = player:GetCharacter().Humanoid.Died:Connect(function()
+            BluePrompt.Enabled = true
+            BlueChest.Transparency = 0
+            blueEvent:Disconnect()
+        end)
     end),
 
     -- Listener for the deposit area (currently only one)
