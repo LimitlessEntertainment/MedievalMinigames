@@ -6,7 +6,12 @@ local ServerScriptService = game:GetService("ServerScriptService")
 
 -- Modules ==========================================================
 local PlayerManager = require(ServerScriptService.Modules.PlayerManager)
-local Games = {CaptureTheTreasure = require(ServerScriptService.Modules.Games.CaptureTheTreasure)}
+
+-- Games
+local Games = {
+    CaptureTheTreasure = require(ServerScriptService.Modules.Games.CaptureTheTreasure),
+    KingOfTheHill = require(ServerScriptService.Modules.Games.KingOfTheHill)
+}
 
 -- Constants ========================================================
 local TIME_CONSTANT = 30
@@ -28,7 +33,7 @@ function Main()
         print("VOTING")
         task.wait(10)
 
-        -- Start the round
+        -- Start the round for whatever was picked.
         Games.CaptureTheTreasure.run()
 
         print("Game over, waiting to start next round.")

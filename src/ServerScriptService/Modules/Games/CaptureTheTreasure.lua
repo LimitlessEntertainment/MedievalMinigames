@@ -23,14 +23,14 @@ local TreasureDeposited = EventsFolder:WaitForChild("TreasureDeposited")
 
 
 -- In-Map Chests
-local RedChest = game.Workspace.RedChest
+local RedChest = game.Workspace.CaptureTheTreasure.RedChest
 local RedPrompt = RedChest.PickupChest
-local BlueChest = game.Workspace.BlueChest
+local BlueChest = game.Workspace.CaptureTheTreasure.BlueChest
 local BluePrompt = BlueChest.PickupChest
 
 -- Treasure deposit areas.
-local BlueDeposit = game.Workspace.BlueDeposit
-local RedDeposit = game.Workspace.RedDeposit
+local BlueDeposit = game.Workspace.CaptureTheTreasure.BlueDeposit
+local RedDeposit = game.Workspace.CaptureTheTreasure.RedDeposit
 
 -- Other
 local db = false
