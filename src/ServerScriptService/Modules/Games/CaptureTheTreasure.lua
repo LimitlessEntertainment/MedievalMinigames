@@ -2,16 +2,24 @@
 local Players = game:GetService("Players")
 local Teams = game:GetService("Teams")
 local ServerStorage = game:GetService("ServerStorage")
+local StarterPack = game:GetService("StarterPack")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Modules ==========================================================
 local PlayerManager = require(game.ServerScriptService.Modules.PlayerManager)
 
 -- Constants ========================================================
-local TIME_CONSTANT = 30
+local TIME_CONSTANT = 240
 
 -- Variables ========================================================
 local RedHoldChest = ServerStorage.GameAssets.CaptureTheTreasure:WaitForChild("RedHoldChest")
 local BlueHoldChest = ServerStorage.GameAssets.CaptureTheTreasure:WaitForChild("BlueHoldChest")
+local EventsFolder = ReplicatedStorage.RemoteEvents.CaptureTheTreasure
+
+-- Events
+local UpdateTimer = EventsFolder:WaitForChild("UpdateTimer")
+local UpdateScore = EventsFolder:WaitForChild("UpdateScore")
+local TreasureDeposited = EventsFolder:WaitForChild("TreasureDeposited")
 
 
 -- In-Map Chests
@@ -41,13 +49,16 @@ function CaptureTheTreasure.run()
     createTeams()
     assignTeams()
     initListeners()
+    giveSwords()
     resetPlayers()
+
 
     -- During game ops
     while true do
 
         -- ROUND TIMER
-        print("TIME LEFT: ", time)
+        --print("TIME LEFT: ", time)
+        UpdateTimer:FireAllClients(time)
         time -= 1
         task.wait(1)
 
@@ -95,6 +106,13 @@ function resetGame()
     RedPrompt.Enabled = false
     BlueChest.Transparency = 0
     RedChest.Transparency = 0
+    StarterPack.ClassicSword:Destroy()
+end
+
+function giveSwords()
+    local sword = ServerStorage.GameAssets.CaptureTheTreasure:WaitForChild("ClassicSword")
+    local cSword = sword:Clone()
+    cSword.Parent = StarterPack
 end
 
 function createTeams()
@@ -228,15 +246,18 @@ function initListeners()
             -- Remove the accessory from the player's character. 
             player:RemoveAccessory("BlueHoldChest")
 
+
             -- Add points to the team
+            print("TREASURE DEPOSITED")
+            redScore += 1
+            UpdateScore:FireAllClients(redScore, blueScore)
+
+            -- Tell the player they deposited it (remote event needed)
+            TreasureDeposited:FireClient(plr)
 
             -- Make the chest visible again & enable the proximity prompt
             BlueChest.Transparency = 0
             BluePrompt.Enabled = true
-
-            print("TREASURE DEPOSITED")
-            redScore += 1
-
 
             task.wait(2)
             db = false
@@ -275,13 +296,18 @@ function initListeners()
             player:RemoveAccessory("RedHoldChest")
 
             -- Add points to the team
+            print("TREASURE DEPOSITED")
+            blueScore += 1
+            UpdateScore:FireAllClients(redScore, blueScore)
+
+            -- Tell the player they deposited it (remote event needed)
+            TreasureDeposited:FireClient(plr)
 
             -- Make the chest visible again & enable the proximity prompt
             RedChest.Transparency = 0
             RedPrompt.Enabled = true
 
-            print("TREASURE DEPOSITED")
-            blueScore += 1
+
 
 
             task.wait(2)
