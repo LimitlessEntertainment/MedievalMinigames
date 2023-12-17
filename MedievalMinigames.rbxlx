@@ -1,0 +1,1230 @@
+<roblox version="4">
+  <Item class="Lighting" referent="0">
+    <Properties>
+      <string name="Name">Lighting</string>
+      <Color3 name="Ambient">
+        <R>0</R>
+        <G>0</G>
+        <B>0</B>
+      </Color3>
+      <float name="Brightness">2</float>
+      <bool name="GlobalShadows">true</bool>
+      <bool name="Outlines">false</bool>
+      <token name="Technology">1</token>
+    </Properties>
+  </Item>
+  <Item class="ReplicatedStorage" referent="1">
+    <Properties>
+      <string name="Name">ReplicatedStorage</string>
+    </Properties>
+    <Item class="Folder" referent="2">
+      <Properties>
+        <string name="Name">Modules</string>
+      </Properties>
+      <Item class="ModuleScript" referent="3">
+        <Properties>
+          <string name="Name">Items</string>
+          <string name="Source">local Items = {
+    -- Cosmetics =================================================================
+    ['lol'] = {
+        name = "LOL",
+        cost = {amount = 100, currency_type = "GEMS"}
+    },
+}
+
+
+return Items</string>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="ServerScriptService" referent="4">
+    <Properties>
+      <string name="Name">ServerScriptService</string>
+    </Properties>
+    <Item class="Folder" referent="5">
+      <Properties>
+        <string name="Name">Modules</string>
+      </Properties>
+      <Item class="Folder" referent="6">
+        <Properties>
+          <string name="Name">Games</string>
+        </Properties>
+        <Item class="ModuleScript" referent="7">
+          <Properties>
+            <string name="Name">CaptureTheTreasure</string>
+            <string name="Source">-- Services =========================================================
+local Players = game:GetService("Players")
+local Teams = game:GetService("Teams")
+local ServerStorage = game:GetService("ServerStorage")
+local StarterPack = game:GetService("StarterPack")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Modules ==========================================================
+local PlayerManager = require(game.ServerScriptService.Modules.PlayerManager)
+
+-- Constants ========================================================
+local TIME_CONSTANT = 240
+
+-- Variables ========================================================
+local RedHoldChest = ServerStorage.GameAssets.CaptureTheTreasure:WaitForChild("RedHoldChest")
+local BlueHoldChest = ServerStorage.GameAssets.CaptureTheTreasure:WaitForChild("BlueHoldChest")
+local EventsFolder = ReplicatedStorage.RemoteEvents.CaptureTheTreasure
+
+-- Events
+local UpdateTimer = EventsFolder:WaitForChild("UpdateTimer")
+local UpdateScore = EventsFolder:WaitForChild("UpdateScore")
+local TreasureDeposited = EventsFolder:WaitForChild("TreasureDeposited")
+
+
+-- In-Map Chests
+local RedChest = game.Workspace.CaptureTheTreasure.RedChest
+local RedPrompt = RedChest.PickupChest
+local BlueChest = game.Workspace.CaptureTheTreasure.BlueChest
+local BluePrompt = BlueChest.PickupChest
+
+-- Treasure deposit areas.
+local BlueDeposit = game.Workspace.CaptureTheTreasure.BlueDeposit
+local RedDeposit = game.Workspace.CaptureTheTreasure.RedDeposit
+
+-- Other
+local db = false
+local redScore = 0
+local blueScore = 0
+local time = TIME_CONSTANT
+
+-- Listeners
+local Listeners = {}
+
+-- ==================================================================
+local CaptureTheTreasure = {}
+
+function CaptureTheTreasure.run()
+    -- Pre-game ops
+    createTeams()
+    assignTeams()
+    initListeners()
+    giveSwords()
+    resetPlayers()
+
+
+    -- During game ops
+    while true do
+
+        -- ROUND TIMER
+        --print("TIME LEFT: ", time)
+        UpdateTimer:FireAllClients(time)
+        time -= 1
+        task.wait(1)
+
+        -- Ending conditions
+        if blueScore >= 2 then
+            print("BLUE WINS!!")
+            break
+        end
+
+        if redScore >= 2 then
+            print("RED WINS!!")
+            break
+        end
+
+        if time &lt;= 0 then
+            if redScore == blueScore then
+                print("TIE GAME!!")
+            elseif blueScore == redScore then
+                print("BLUE WINS!!")
+            elseif redScore == blueScore then
+                print("RED WINS!!")
+            else
+                print("TIME OUT!")
+            end
+            break
+        end
+    end
+
+    -- Post-game ops
+    print("Game over")
+    print("RED SCORE: ", redScore)
+    print("BLUE SCORE: ", blueScore)
+    assignLobby()
+    destroyTeams()
+    disconnect()
+    resetGame()
+    resetPlayers()
+end
+
+function resetGame()
+    redScore = 0
+    blueScore = 0
+    time = TIME_CONSTANT
+    BluePrompt.Enabled = false
+    RedPrompt.Enabled = false
+    BlueChest.Transparency = 0
+    RedChest.Transparency = 0
+    StarterPack.ClassicSword:Destroy()
+end
+
+function giveSwords()
+    local sword = ServerStorage.GameAssets.CaptureTheTreasure:WaitForChild("ClassicSword")
+    local cSword = sword:Clone()
+    cSword.Parent = StarterPack
+end
+
+function createTeams()
+    -- Create the teams
+    local DragonTeam = Instance.new("Team", Teams)
+    DragonTeam.Name = "Dragonhold"
+    DragonTeam.AutoAssignable = false
+    DragonTeam.TeamColor = BrickColor.new("Bright red")
+
+    local WinterTeam = Instance.new("Team", Teams)
+    WinterTeam.Name = "Winterhold"
+    WinterTeam.AutoAssignable = false
+    WinterTeam.TeamColor = BrickColor.new("Deep blue")
+end
+
+function destroyTeams()
+    for _, v in pairs(Teams:GetTeams()) do
+        if v ~= Teams.Lobby then
+            v:Destroy()
+        end
+    end
+end
+
+
+function assignTeams()
+    local players = Players:GetPlayers()
+    for i, v in pairs(players) do
+        if(i % 2 == 0) then
+            v.Team = Teams:FindFirstChild("Dragonhold")
+        else
+            v.Team = Teams:FindFirstChild("Winterhold")
+        end
+    end
+end
+
+function assignLobby()
+    local players = Players:GetPlayers()
+    for _, v in pairs(players) do
+        v.Team = Teams.Lobby
+    end
+end
+
+function disconnect()
+    for _, v in pairs(Listeners) do
+        v:Disconnect()
+    end
+end
+
+function resetPlayers()
+    for _, v in(Players:GetPlayers()) do
+        v:LoadCharacter()
+    end
+end
+
+-- Event Listeners
+
+-- Listener for the prompt on the treasure chest.
+function initListeners()
+    RedPrompt.Enabled = true
+    BluePrompt.Enabled = true
+
+    Listeners = {
+    RedPrompt.Triggered:Connect(function(plr)
+        -- Make sure the chest has not already been picked up.
+        if RedChest.Transparency > 0.8 then return error("Chest has already been picked up.") end 
+        if plr.Team == Teams.Dragonhold then return error("Player cannot pick up their own team's chest.") end
+
+        -- Pick the chest up.
+        local player = PlayerManager.getPlayerByInstance(plr)
+        RedChest.Transparency = 0.9
+        RedPrompt.Enabled = false
+        player:AddAccessory(RedHoldChest:Clone())
+
+        -- Add a listener to the player holding the chest to check if they die with it.
+        local redEvent
+        redEvent = player:GetCharacter().Humanoid.Died:Connect(function()
+            print("ENTERED HERE LOL")
+            RedPrompt.Enabled = true
+            RedChest.Transparency = 0
+            redEvent:Disconnect()
+        end)
+    end),
+
+    BluePrompt.Triggered:Connect(function(plr)
+        -- Make sure the chest has not already been picked up.
+        if BlueChest.Transparency > 0.8 then return error("Chest has already been picked up.") end 
+        if plr.Team == Teams.Winterhold then return error("Player cannot pick up their own team's chest.") end
+
+        -- Pick the chest up.
+        local player = PlayerManager.getPlayerByInstance(plr)
+        BlueChest.Transparency = 0.9
+        BluePrompt.Enabled = false
+        player:AddAccessory(BlueHoldChest:Clone())
+
+        -- Add a listener to the player holding the chest to check if they die with it.
+        local blueEvent
+        blueEvent = player:GetCharacter().Humanoid.Died:Connect(function()
+            BluePrompt.Enabled = true
+            BlueChest.Transparency = 0
+            blueEvent:Disconnect()
+        end)
+    end),
+
+    -- Listener for the deposit area (currently only one)
+    RedDeposit.Touched:Connect(function(hit)
+       
+        -- Make sure it is not a part hitting the area.
+        if db or not hit.parent:FindFirstChild("Humanoid") then
+            return
+        else
+            db = true
+            -- Get the player from the hit.
+            local player
+            local plr = Players:GetPlayerFromCharacter(hit.parent)
+            if plr then
+                player = PlayerManager.getPlayerByInstance(plr)
+            else
+                return
+            end
+
+            -- Make sure they're on the right team.
+            if not plr.Team == Teams.Dragonhold then return error("You are not on the blue team!") end
+
+            -- Check to make sure they actually had the chest.
+            if not player:HasAccessory("BlueHoldChest") then 
+                task.wait(2)
+                db = false
+                return print("You dont have the chest.") 
+            end
+
+            -- Remove the accessory from the player's character. 
+            player:RemoveAccessory("BlueHoldChest")
+
+
+            -- Add points to the team
+            print("TREASURE DEPOSITED")
+            redScore += 1
+            UpdateScore:FireAllClients(redScore, blueScore)
+
+            -- Tell the player they deposited it (remote event needed)
+            TreasureDeposited:FireClient(plr)
+
+            -- Make the chest visible again &amp; enable the proximity prompt
+            BlueChest.Transparency = 0
+            BluePrompt.Enabled = true
+
+            task.wait(2)
+            db = false
+        end
+
+    end),
+
+    -- Blue deposit area.
+    BlueDeposit.Touched:Connect(function(hit)
+       
+        -- Make sure it is not a part hitting the area.
+        if db or not hit.parent:FindFirstChild("Humanoid") then
+            return
+        else
+            db = true
+            -- Get the player from the hit.
+            local player
+            local plr = Players:GetPlayerFromCharacter(hit.parent)
+            if plr then
+                player = PlayerManager.getPlayerByInstance(plr)
+            else
+                return
+            end
+
+            -- Make sure they're on the right team.
+            if not plr.Team == Teams.Winterhold then return error("You are not on the blue team!") end
+
+            -- Check to make sure they actually had the chest.
+            if not player:HasAccessory("RedHoldChest") then 
+                task.wait(2)
+                db = false
+                return print("You dont have the chest.") 
+            end
+
+            -- Remove the accessory from the player's character. 
+            player:RemoveAccessory("RedHoldChest")
+
+            -- Add points to the team
+            print("TREASURE DEPOSITED")
+            blueScore += 1
+            UpdateScore:FireAllClients(redScore, blueScore)
+
+            -- Tell the player they deposited it (remote event needed)
+            TreasureDeposited:FireClient(plr)
+
+            -- Make the chest visible again &amp; enable the proximity prompt
+            RedChest.Transparency = 0
+            RedPrompt.Enabled = true
+
+
+
+
+            task.wait(2)
+            db = false
+        end
+
+    end)}
+end
+
+
+
+
+
+return CaptureTheTreasure</string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="8">
+          <Properties>
+            <string name="Name">KingOfTheHill</string>
+            <string name="Source">-- Services ==========================================================================
+local Players = game:GetService("Players")
+local ServerScriptService = game:GetService("ServerScriptService")
+local Teams = game:GetService("Teams")
+local ServerStorage = game:GetService("ServerStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Modules ===========================================================================
+local PlayerManager = require(ServerScriptService.Modules.PlayerManager)
+
+-- Constants==========================================================================
+local TIME_CONSTANT = 300 -- for a 5-minute round
+local SCORE_TO_WIN = 50 -- points needed to win
+local TEAM_COLORS = {BrickColor.new("Bright red"), BrickColor.new("Bright blue")}
+local TEAM_NAMES = {"Red Team", "Blue Team"}
+
+--Variables===========================================================================
+local hill = game.Workspace.Hill 
+local gameRunning = false
+local scores = {} -- table to keep track of the score
+local time = TIME_CONSTANT
+local EventsFolder = ReplicatedStorage.RemoteEvents.CaptureTheTreasure
+
+-- Events
+-- TODO UPDATE THESE TO THE EVENTS FOR THIS MINIGAME
+local UpdateTimer = EventsFolder:WaitForChild("UpdateTimer")
+local UpdateScore = EventsFolder:WaitForChild("UpdateScore")
+local TreasureDeposited = EventsFolder:WaitForChild("TreasureDeposited")
+
+-- Listeners =========================================================================
+local Listeners = {}
+
+--====================================================================================
+local KingOfTheHill = {}
+
+function KingOfTheHill.run() 
+    -- Pre-game ops
+    createTeams()
+    assignTeams()
+    resetPlayers()
+    initListeners()
+
+    gameRunning = true -- when the game starts
+    print("Game has started")
+
+    -- During game ops
+    while gameRunning do
+        time -= 1 -- Decrease the remaining time by a second
+       --print("Time LEFT: ", time) -- prints the time left
+        task.wait(1) -- runs the loop every 1 sec 
+
+        local currentOccupant = nil
+
+        for _, player in pairs(Players:GetPlayers()) do
+            if isPlayerOnHill(player) then
+                currentOccupant = player
+                break
+            end
+        end
+
+        if currentOccupant then
+            scores[currentOccupant.UserId] = (scores[currentOccupant.UserId] or 0) + 1
+            if scores[currentOccupant.UserId] >= SCORE_TO_WIN then
+                gameRunning = false
+                print(currentOccupant.Name .. " Wins")
+            end
+        end
+
+        if time &lt;= 0 then
+            gameRunning = false
+            print("Ran outta time on godddd")
+        end
+    end
+
+    -- Post Game ops
+    postGameCleanup()
+end
+
+function postGameCleanup()
+    assignLobby()
+    destroyTeams()
+    disconnectListeners()
+    resetPlayers()
+    resetVars()
+end
+
+function resetVars()
+    scores = {}
+    time = TIME_CONSTANT
+end
+
+function createTeams()
+    local TEAM_COLORS = {BrickColor.new("Bright red"), BrickColor.new("Bright blue")}
+    local TEAM_NAMES = {"Red Team", "Blue Team"}
+
+    for i, teamName in ipairs(TEAM_NAMES) do
+        local team = Instance.new("Team")
+        team.Name = teamName
+        team.TeamColor = TEAM_COLORS[i]
+        team.AutoAssignable = false
+        team.Parent = Teams
+    end
+end
+
+function destroyTeams()
+    for _, team in pairs(Teams:GetChildren()) do
+        team:Destroy()
+    end     
+end
+
+function assignTeams()
+    local players = Players:GetPlayers()
+    for i, player in ipairs(players) do
+        local teamIndex = (i % #TEAM_NAMES) + 1
+        player.Team = Teams:FindFirstChild(TEAM_NAMES[teamIndex])
+    end
+end
+
+function assignLobby()
+    for _, player in pairs(Players:GetPlayers()) do
+        player.Team = nil -- Assuming there's no specific 'Lobby' team, we're setting it to nil.
+    end
+end
+
+function resetPlayers()
+    for _, player in pairs(Players:GetPlayers()) do
+        player:LoadCharacter()
+    end
+end
+
+function disconnectListeners()
+    for _, listener in pairs(Listeners) do
+        listener:Disconnect()
+    end
+    Listeners = {}
+end
+
+function isPlayerOnHill(player)
+    local playerPosition = player.Character.HumanoidRootPart.Position
+    local hillPosition = hill.Position
+    local hillSize = hill.Size 
+
+    return
+        playerPosition.X >= hillPosition.X - hillSize.X / 2 and
+        playerPosition.X &lt;= hillPosition.X + hillSize.X / 2 and
+        playerPosition.Z >= hillPosition.Z - hillSize.Z / 2 and
+        playerPosition.Z &lt;= hillPosition.Z + hillSize.Z / 2 and
+        playerPosition.Y >= hillPosition.Y - hillSize.Y / 2 and
+        playerPosition.Y &lt;= hillPosition.Y + hillSize.Y / 2
+end
+
+function initListeners()
+    table.insert(Listeners, hill.Touched:Connect(function(hit)
+        local player = game.Players:GetPlayerFromCharacter(hit.Parent)
+        if player and isPlayerOnHill(player) then
+            scores[player.UserId] = (scores[player.UserId] or 0) + 1
+        end
+    end))
+end
+
+return KingOfTheHill</string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="9">
+          <Properties>
+            <string name="Name">Revolt</string>
+            <string name="Source">-- Services ==========================================================================
+local Players = game:GetService("Players")
+local ServerScriptService = game:GetService("ServerScriptService")
+local Teams = game:GetService("Teams")
+local ServerStorage = game:GetService("ServerStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+-- Modules ===========================================================================
+local PlayerManager = require(ServerScriptService.Modules.PlayerManager)
+
+-- Constants==========================================================================
+local TIME_CONSTANT = 300 -- for a 5-minute round
+local TEAM_NAMES = {"Civilians", "Knights"}
+
+--Variables===========================================================================
+local castle = game.Workspace.Revolt
+local gameRunning = false
+local scores = {} -- table to keep track of the score
+local EventsFolder = ReplicatedStorage.RemoteEvents.Revolt
+
+-- Other
+local db = false
+local civilianScore = 0
+local knightScore = 0
+local time = TIME_CONSTANT
+
+-- Listeners =========================================================================
+local Listeners = {}
+
+--====================================================================================
+local Revolt = {}
+
+function Revolt.run() 
+    -- Pre-game ops
+    createTeams()
+    assignTeams()
+    armPlayers()
+    resetPlayers()
+    initListeners()
+    
+
+    gameRunning = true
+
+    while gameRunning do
+        time -= 1
+        task.wait(1)
+
+        if time &lt;= 0 then
+            gameRunning = false
+        end
+    end
+
+    postGameCleanup()
+end
+
+
+function postGameCleanup()
+    assignLobby()
+    destroyTeams()
+    disconnectListeners()
+    resetPlayers()
+    resetVars()
+end
+
+function resetVars()
+    scores = {}
+    time = TIME_CONSTANT
+end
+
+function createTeams()
+    local TEAM_COLORS = {BrickColor.new("Bright red"), BrickColor.new("Bright blue")}
+    local TEAM_NAMES = {"Civilians", "Knights"}
+
+    for i, teamName in ipairs(TEAM_NAMES) do
+        local team = Instance.new("Team")
+        team.Name = teamName
+        team.TeamColor = TEAM_COLORS[i]
+        team.AutoAssignable = false
+        team.Parent = Teams
+    end
+end
+
+function destroyTeams()
+    for _, team in pairs(Teams:GetChildren()) do
+        team:Destroy()
+    end     
+end
+
+function assignTeams()
+    local players = Players:GetPlayers()
+    for i, player in ipairs(players) do
+        local teamIndex = (i % #TEAM_NAMES) + 1
+        player.Team = Teams:FindFirstChild(TEAM_NAMES[teamIndex])
+    end
+end
+
+function armPlayers()
+    local sword = ServerStorage.GameAssets.Revolt:WaitForChild("ClassicSword")
+    local pitchfork = ServerStorage.GameAssets.Revolt:WaitForChild("Pitchfork")
+    local players = Players:GetPlayers()
+    for _, p in players do
+        if(p.Team == TEAM_NAMES[0]) then
+            pitchfork:Clone().Parent = p.Backpack
+        else
+            sword:Clone().Parent = p.Backpack
+        end
+    end
+end
+
+function assignLobby()
+    for _, player in pairs(Players:GetPlayers()) do
+        player.Team = nil -- Assuming there's no specific 'Lobby' team, we're setting it to nil.
+    end
+end
+
+function resetPlayers()
+    for _, player in pairs(Players:GetPlayers()) do
+        player:LoadCharacter()
+    end
+end
+
+function disconnectListeners()
+    for _, listener in pairs(Listeners) do
+        listener:Disconnect()
+    end
+    Listeners = {}
+end
+
+function initListeners()
+   
+end
+
+return Revolt</string>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="ModuleScript" referent="10">
+        <Properties>
+          <string name="Name">Inventory</string>
+          <string name="Source">-- Note: Money does not have a carry weight.
+
+-- Services ========================================================
+-- N/A
+
+-- Modules =========================================================
+local Items = require(game.ReplicatedStorage.Modules.Items)
+--local EventHandler = require(game.ReplicatedStorage.Modules.EventHandler)
+
+-- Variables =======================================================
+-- N/A
+
+-- =================================================================
+
+
+
+local Inventory = {}
+Inventory.__index = Inventory
+
+function Inventory.new()
+---@diagnostic disable-next-line: undefined-global
+    self = {}
+    setmetatable(self, Inventory)
+
+    -- Money
+    self._coins = 0
+    self._gems = 0
+
+    -- Items
+    self._items = {}
+    
+    return self
+end
+
+-- Grab the whole inventory.
+function Inventory:getInventory()
+    -- Just returning the basics, no need to return the functions.
+    return {
+        ['coins'] = self._coins,
+        ['gems'] = self._gems,
+        ['items'] = self._items
+    }
+end
+
+-- Inventory stats getters
+
+-- Money Getters
+function Inventory:getCoins()
+    return self._coins
+end
+
+function Inventory:getGems()
+    return self._gems
+end
+
+-- Money setters
+function Inventory:setCoins(amount: number)
+    self._coins = amount
+end
+
+function Inventory:addCoins(amount: number)
+    self._coins += amount
+end
+
+function Inventory:setGems(amount: number)
+    self._gems = amount
+end
+
+function Inventory:addGems(amount: number)
+    self._gems += amount
+end
+
+function Inventory:removeGems(amount: number)
+    self._gems -= amount
+end
+
+function Inventory:removeCoins(amount: number)
+    self._coins -= amount
+end
+
+-- Item handling
+function Inventory:hasItem(item_id: string)
+    if self._items[item_id] ~= nil then 
+        return true 
+    else
+        return false
+    end
+end
+
+function Inventory:getItem(item_id: string)
+    if self:hasItem(item_id) then
+        return self._items[item_id]
+    else
+        -- Returns nil if the item is not found in the Player's inventory.
+        return nil
+    end
+end
+
+function Inventory:getAllItems()
+    return self._items
+end
+
+function Inventory:addItem(item_id: string, amount: number)
+    if Items[item_id] ~= nil then
+        if self:hasItem(item_id) then
+            self._items[item_id].amount += amount
+        else
+            self._items[item_id] = {amount = amount}
+        end
+        -- Fire event to tell the client that the inventory has been updated.
+        --EventHandler.ItemAdded = {[item_id] = {amount = self._items[item_id].amount}}
+    else
+        return error("This item id does not exist.")
+    end
+end
+
+function Inventory:removeItem(item_id: string, amount: number)
+    if Items[item_id] ~= nil then                              
+        if amount > self._items[item_id].amount then
+            return error("Attempt to remove " .. amount .. " " .. item_id .. " from inventory unsuccessful: Amount to remove exceeds current amount.")
+            else if self._items[item_id].amount - amount == 0 then
+                self._items[item_id] = nil
+            else
+                self._items[item_id].amount -= amount
+            end
+        end
+    else
+        return error("This item id does not exist.")
+    end
+end
+
+-- Event listeners
+
+
+return Inventory</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="11">
+        <Properties>
+          <string name="Name">Player</string>
+          <string name="Source">-- Services =========================================================
+local DSS = game:GetService("DataStoreService")
+local Players = game:GetService("Players")
+
+-- Modules ==========================================================
+local Inventory = require(game.ServerScriptService.Modules.Inventory)
+
+-- Variables ========================================================
+local PLAYER_DATA = DSS:GetDataStore("PLAYER_DATA")
+
+-- ==================================================================
+
+local Player = {}
+
+Player.__index = Player
+
+function Player.new(player_instance: Player)
+    local self = {}
+    setmetatable(self, Player)
+    
+    -- Set player properties
+    self.Player = player_instance
+    self._level = 1
+    self._xp = 0
+    self._health = 100
+
+    -- Create inventory for player.
+    self.Inventory = Inventory.new()
+
+    -- Equipped items 
+    self._EquippedItems = {
+        ['head'] = nil,
+        ['chest'] = nil,
+        ['legs'] = nil,
+        ['feet'] = nil,
+        ['hands'] = nil,
+        ['left_hand_item'] = nil,
+        ['right_hand_item'] = nil
+    }
+
+    return self
+end
+
+
+
+function Player:getPlayer()
+    return self.Player
+end
+
+function Player:loadSaveData()
+    -- Get the player's key.
+    local key = self.Player.Name .. ":" .. self.Player.UserId
+
+    -- Request the player's data from the datastore.
+    local data
+    local success, err = pcall(function()
+        data = PLAYER_DATA:GetAsync(key)
+    end)
+
+    if success then
+        -- Set all the player's attributes accordingly
+        self._level = data.level
+        self._xp = data.xp
+        self._EquippedItems = data.EquippedItems
+        self.Inventory:setCoins(data.Inventory.coins)
+        self.Inventory:setGems(data.Inventory.gems)
+        self.Inventory:setItemCount(data.Inventory.items.length)
+        self.Inventory:setTotalWeight(data.Inventory.total_weight)
+        self.Inventory._items = data.Inventory.items
+    else
+        error(err)
+        self:Kick("ERROR CODE: DS1\nYour datastore has failed to load.")
+    end
+end
+
+function Player:saveData()
+    -- Get the player's key.
+    local key = "player_" .. self.Player.UserId
+
+    local data = {
+        level = self._level,
+        xp = self._xp,
+        EquippedItems = self._EquippedItems,
+        Inventory = {
+            coins = self.Inventory._coins,
+            gems = self.Inventory._gems,
+            items = self.Inventory._items
+        }
+    }
+
+    -- Attempt to save data to datastore.
+    local success, err = pcall(function()
+        PLAYER_DATA:SetAsync(key, data)
+    end)
+
+    if success then
+        return success
+    else
+        err(err)
+    end
+end
+
+function Player:Kick(reason: string)
+    self.Player:Kick(reason)
+end
+
+function Player:Leaving()
+end
+
+function Player:printTest()
+    print("This function is working!")
+end
+
+function Player:GetCharacter()
+    return self.Player.Character
+end
+
+function Player:AddAccessory(accessory: Accessory)
+    local character = self:GetCharacter()
+    return character.Humanoid:AddAccessory(accessory)
+end
+
+function Player:RemoveAccessory(name: string)
+    local character = self:GetCharacter()
+    local accessories = character.Humanoid:GetAccessories()
+    for _, v in pairs(accessories) do
+        if v.Name == name then
+            v:Destroy()
+        end
+    end
+end
+
+function Player:HasAccessory(name: string)
+    local character = self:GetCharacter()
+    local accessories = character.Humanoid:GetAccessories()
+    for _, v in pairs(accessories) do
+        if v.Name == name then
+            return true
+        end
+    end
+
+    return false
+end
+
+function Player:Respawn()
+    
+end
+
+return Player</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="12">
+        <Properties>
+          <string name="Name">PlayerManager</string>
+          <string name="Source">-- Services =========================================================
+
+-- Modules ==========================================================
+local Player = require(game.ServerScriptService.Modules.Player)
+
+-- Variables ========================================================
+
+-- ==================================================================
+local PlayerManager = {}
+
+function PlayerManager.addPlayer(player: Player)
+    local newPlayer = Player.new(player)
+    PlayerManager[player.Name] = newPlayer
+    return newPlayer
+end
+
+function PlayerManager.removePlayer(player: Player)
+    PlayerManager[player.Name] = nil
+end
+
+function PlayerManager.getPlayerByName(name: string)
+    if PlayerManager[name] ~= nil then
+        return PlayerManager[name]
+    else
+        return nil
+    end
+end
+
+function PlayerManager.getPlayerByInstance(player_instance: Player)
+    if PlayerManager[player_instance.Name] ~= nil then
+        return PlayerManager[player_instance.Name]
+    else
+        return nil
+    end
+end
+
+return PlayerManager</string>
+        </Properties>
+      </Item>
+    </Item>
+    <Item class="Folder" referent="13">
+      <Properties>
+        <string name="Name">Server</string>
+      </Properties>
+      <Item class="Script" referent="14">
+        <Properties>
+          <string name="Name">Main</string>
+          <token name="RunContext">0</token>
+          <string name="Source">-- Services =========================================================
+local Players = game:GetService("Players")
+local Teams = game:GetService("Teams")
+local ServerStorage = game:GetService("ServerStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
+
+-- Modules ==========================================================
+local PlayerManager = require(ServerScriptService.Modules.PlayerManager)
+
+-- Games
+local Games = {
+    CaptureTheTreasure = require(ServerScriptService.Modules.Games.CaptureTheTreasure),
+    KingOfTheHill = require(ServerScriptService.Modules.Games.KingOfTheHill),
+    Revolt = require(ServerScriptService.Modules.Games.Revolt)
+}
+
+-- Constants ========================================================
+local TIME_CONSTANT = 30
+
+-- Variables ========================================================
+
+
+-- Other
+
+
+-- Listeners
+local Listeners = {}
+
+-- ==================================================================
+-- Main loop
+function Main()
+    while true do
+        -- Player voting
+        print("VOTING")
+        task.wait(10)
+
+        -- Start the round for whatever was picked.
+        Games.Revolt.run()
+
+        print("Game over, waiting to start next round.")
+        task.wait(20)
+    end
+end
+
+Main()</string>
+        </Properties>
+      </Item>
+      <Item class="Script" referent="15">
+        <Properties>
+          <string name="Name">PlayerAdded</string>
+          <token name="RunContext">0</token>
+          <string name="Source"><![CDATA[local Players = game:GetService("Players")
+local PlayerManager = require(game.ServerScriptService.Modules.PlayerManager)
+local CaptureTheTreasure = require(game.ServerScriptService.Modules.Games.CaptureTheTreasure)
+
+Players.PlayerAdded:Connect(function(player)
+    -- Creates a new Player instance.
+    local plr = PlayerManager.addPlayer(player)
+end)
+
+]]></string>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="SoundService" referent="16">
+    <Properties>
+      <string name="Name">SoundService</string>
+      <bool name="RespectFilteringEnabled">true</bool>
+    </Properties>
+  </Item>
+  <Item class="StarterPlayer" referent="17">
+    <Properties>
+      <string name="Name">StarterPlayer</string>
+    </Properties>
+    <Item class="StarterCharacterScripts" referent="18">
+      <Properties>
+        <string name="Name">StarterCharacterScripts</string>
+      </Properties>
+    </Item>
+    <Item class="StarterPlayerScripts" referent="19">
+      <Properties>
+        <string name="Name">StarterPlayerScripts</string>
+      </Properties>
+      <Item class="Folder" referent="20">
+        <Properties>
+          <string name="Name">Games</string>
+        </Properties>
+        <Item class="Folder" referent="21">
+          <Properties>
+            <string name="Name">CaptureTheTreasure</string>
+          </Properties>
+          <Item class="LocalScript" referent="22">
+            <Properties>
+              <string name="Name">TreasureDeposited</string>
+              <string name="Source">-- Services =========================================================
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+-- Modules ==========================================================
+
+-- Variables ========================================================
+local Player = Players.LocalPlayer
+local EventsFolder = ReplicatedStorage.RemoteEvents.CaptureTheTreasure
+
+-- Events ===========================================================
+local TreasureDeposited = EventsFolder:WaitForChild("TreasureDeposited")
+
+-- ==================================================================
+
+TreasureDeposited.OnClientEvent:Connect(function() 
+
+    print("REMOTE: YOU HAVE DEPOSITED THE TREASURE!!!")
+
+end)</string>
+            </Properties>
+          </Item>
+          <Item class="LocalScript" referent="23">
+            <Properties>
+              <string name="Name">UpdateScore</string>
+              <string name="Source"><![CDATA[-- Services =========================================================
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+-- Modules ==========================================================
+
+-- Variables ========================================================
+local Player = Players.LocalPlayer
+local EventsFolder = ReplicatedStorage.RemoteEvents.CaptureTheTreasure
+
+-- Events ===========================================================
+local UpdateScore = EventsFolder:WaitForChild("UpdateScore")
+
+-- ==================================================================
+
+UpdateScore.OnClientEvent:Connect(function(redScore, blueScore)
+
+    print("REMOTE RED SCORE: ", redScore)
+    print("REMOTE BLUE SCORE: ", blueScore)
+
+end)
+
+]]></string>
+            </Properties>
+          </Item>
+          <Item class="LocalScript" referent="24">
+            <Properties>
+              <string name="Name">UpdateTimer</string>
+              <string name="Source"><![CDATA[-- Services =========================================================
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+-- Modules ==========================================================
+
+-- Variables ========================================================
+local Player = Players.LocalPlayer
+local EventsFolder = ReplicatedStorage.RemoteEvents.CaptureTheTreasure
+
+-- Events ===========================================================
+local UpdateTimer = EventsFolder:WaitForChild("UpdateTimer")
+
+-- ==================================================================
+
+UpdateTimer.OnClientEvent:Connect(function(time) 
+
+    print("REMOTE TIME:", time)
+
+end)
+]]></string>
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="Workspace" referent="25">
+    <Properties>
+      <string name="Name">Workspace</string>
+      <bool name="FilteringEnabled">true</bool>
+    </Properties>
+    <Item class="Part" referent="26">
+      <Properties>
+        <string name="Name">Baseplate</string>
+        <bool name="Anchored">true</bool>
+        <Color3uint8 name="Color3uint8">6512483</Color3uint8>
+        <bool name="Locked">true</bool>
+        <Vector3 name="Position">
+          <X>0</X>
+          <Y>-10</Y>
+          <Z>0</Z>
+        </Vector3>
+        <Vector3 name="size">
+          <X>512</X>
+          <Y>20</Y>
+          <Z>512</Z>
+        </Vector3>
+      </Properties>
+    </Item>
+  </Item>
+</roblox>

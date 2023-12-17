@@ -10,7 +10,8 @@ local PlayerManager = require(ServerScriptService.Modules.PlayerManager)
 -- Games
 local Games = {
     CaptureTheTreasure = require(ServerScriptService.Modules.Games.CaptureTheTreasure),
-    KingOfTheHill = require(ServerScriptService.Modules.Games.KingOfTheHill)
+    KingOfTheHill = require(ServerScriptService.Modules.Games.KingOfTheHill),
+    Revolt = require(ServerScriptService.Modules.Games.Revolt)
 }
 
 -- Constants ========================================================
@@ -34,7 +35,7 @@ function Main()
         task.wait(10)
 
         -- Start the round for whatever was picked.
-        Games.CaptureTheTreasure.run()
+        Games.Revolt.run()
 
         print("Game over, waiting to start next round.")
         task.wait(20)
