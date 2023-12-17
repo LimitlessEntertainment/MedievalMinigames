@@ -32,9 +32,9 @@ local Revolt = {}
 function Revolt.run() 
     -- Pre-game ops
     createTeams()
-    assignTeams()
-    armPlayers()
+    assignTeams() 
     resetPlayers()
+    armPlayers()
     initListeners()
     
 
